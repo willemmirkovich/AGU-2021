@@ -1,22 +1,28 @@
 import numpy as np
 from tqdm.auto import trange
 
+# Data structures
+
 '''
+pool  of features/hyperparameters
 pool = {
+    'feature': [0, 1], # NOTE: 0 => off, 1 => on
     'time_lag': [0, 1, 2, 3, 4, 5],
-    'layer_1_units': [1, 4, 8, 12, 16], # NOTE: layer 1 cannot be 0
+    'layer_1_units': [1, 4, 8, 12, 16],
     'layer_2_units': [0, 1, 4, 8, 12, 16],
     'layer_3_units': [0, 1, 4, 8, 12, 16]
 }
 
+'''
+
+'''
+member of a population
 member_data_model = {
     'genes': {
-        'feature_al': [0, 1],
-        'feature_By': [0, 1],
-        'time_lag': 2,
-        'layer_1_units': 4, # NOTE: layer 1 cannot be 0
-        'layer_2_units': 12,
-        'layer_3_units': 0 # NOTE: 0 stands for no layer here
+        values from keys of pool
+        'X': 1,
+        'Y': 2,
+        ...
     },
     'model': None, # NOTE: actual tf model,
     'X_scaler': fn,
@@ -58,7 +64,6 @@ def mutate(member, pool):
     gene = np.random.choice(list(pool.keys()))
     member['genes'][gene] = np.random.choice(pool[gene])
 
-# TODO: determine if should return 2 offspring, like in paper
 def crossover_binary(m1, m2, pool, mutate_chance=.1):
     """
     Binary crossover of alleles from either parent (50/50 from each parent)
@@ -77,8 +82,6 @@ def crossover_binary(m1, m2, pool, mutate_chance=.1):
         mutate(offspring, pool)
     return offspring
 
-# TODO: need better name here
-# TODO: determine if should return 2 offspring, like in paper
 def generate_offspring(m1, m2, pool, mutate_chance=.1):
     """
     Generates a child based on 2 parent members of a population
@@ -98,6 +101,9 @@ def generate_offspring(m1, m2, pool, mutate_chance=.1):
     return offspring
 
 def fitness_val_loss(population):
+    """
+    Fitness value based on weighted validation loss against population 
+    """
     pop_loss = 0
     for m in population:
         pop_loss += m['val_loss'] 
@@ -106,10 +112,10 @@ def fitness_val_loss(population):
 
 
 def rank_val_loss(population):
+    """
+    Function to rank each member in a population based on validation loss (low valid loss => high rank)
+    """
     losses = np.array([m['val_loss'] for m in population])
-    # TODO: need to look at how argsort works, not working currently
-    #ranks = np.argsort(losses)
-    # NOTE: should work for now
     s = np.sort(losses)
     ranks = np.array([np.argwhere(s == losses[i])[0][0] for i in range(0, len(losses))])
 
@@ -117,6 +123,9 @@ def rank_val_loss(population):
         population[i]['rank'] = ranks[i] + 1
 
 def fitness_rank(population):
+    """
+    Fitness function based on rank weighted by rank against population 
+    """
     n = len(population)
     total = 0
     for m in population:
@@ -125,20 +134,32 @@ def fitness_rank(population):
         m['fitness'] = (n + 1 - m['rank']) / total
 
 def member_selection_rank(population):
+    """
+    Computes probability of selection based on fitness using rank
+    """
     return [m['fitness'] for m in population]
 
 def member_selection_prob_val_loss(population):
+    """
+    Computes probability of selection based on fitness using valid loss
+    """
     fitness_vals = np.array([m['fitness'] for m in population])
     t = 1 / fitness_vals
     s = np.sum(t)
     return t / s
 
 def get_member_with_rank(rank, population):
+    """
+    Grabs member with 'rank' from population
+    """
     for m in population:
         if m['rank'] == rank:
             return m 
 
 def genetic_algorithm(pool, size=20, generations=3, mutation_prob=.1, train_epochs=5, fill_member=None):
+    """
+    Genetic algorithm for generating a successive models based on a given pool of genes to choose from 
+    """
     
     # create initial population
     init_pop = [generate_random_member(pool) for _ in range(size)]
@@ -146,9 +167,7 @@ def genetic_algorithm(pool, size=20, generations=3, mutation_prob=.1, train_epoc
     for i in trange(len(init_pop)):
         member = init_pop[i]
         fill_member(member, train_epochs)
-    # need all val_loss filled in before calculating fitness vals
     rank_val_loss(init_pop)
-    #fitness_val_loss(init_pop)
     fitness_rank(init_pop)
     history = [
         {
@@ -158,23 +177,19 @@ def genetic_algorithm(pool, size=20, generations=3, mutation_prob=.1, train_epoc
     ]
     print('Initial Population Generated')
     
+    # generate x generations
     current_pop = init_pop
     for g in range(1, generations+1):
         print('Generating Population %s' % g)
-        #sel_prob = member_selection_prob_val_loss(current_pop)
         sel_prob = member_selection_rank(current_pop)
         new_pop = []
         for _ in trange(size):
-            # TODO: need to make sure this does a good job of getting to good params, look at ieee
             parents = np.random.choice(current_pop, size=2, replace=False, p=sel_prob)
             m1, m2 = parents[0], parents[1]
             new_pop.append(crossover_binary(m1, m2, pool, mutate_chance=mutation_prob))
         for member in new_pop:
             fill_member(member, train_epochs)
         rank_val_loss(new_pop)
-        #if ((generations+1) / 2) < g:
-        #fitness_val_loss(new_pop)
-        #else:
         fitness_rank(new_pop)
             
         current_pop = new_pop
@@ -187,8 +202,6 @@ def genetic_algorithm(pool, size=20, generations=3, mutation_prob=.1, train_epoc
         )
 
         print('Generation %s complete' % g)
-        
-    # at end, return history of training and final pop
-    #rank_val_loss(current_pop)
-    
+
+    # return results after x generations
     return history, get_member_with_rank(1, current_pop)
