@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm.auto import trange
 
 '''
 pool = {
@@ -141,7 +142,9 @@ def genetic_algorithm(pool, size=20, generations=3, mutation_prob=.1, train_epoc
     
     # create initial population
     init_pop = [generate_random_member(pool) for _ in range(size)]
-    for member in init_pop:
+    print('Generating Initial Population')
+    for i in trange(len(init_pop)):
+        member = init_pop[i]
         fill_member(member, train_epochs)
     # need all val_loss filled in before calculating fitness vals
     rank_val_loss(init_pop)
@@ -157,10 +160,11 @@ def genetic_algorithm(pool, size=20, generations=3, mutation_prob=.1, train_epoc
     
     current_pop = init_pop
     for g in range(1, generations+1):
+        print('Generating Population %s' % g)
         #sel_prob = member_selection_prob_val_loss(current_pop)
         sel_prob = member_selection_rank(current_pop)
         new_pop = []
-        for _ in range(size):
+        for _ in trange(size):
             # TODO: need to make sure this does a good job of getting to good params, look at ieee
             parents = np.random.choice(current_pop, size=2, replace=False, p=sel_prob)
             m1, m2 = parents[0], parents[1]
