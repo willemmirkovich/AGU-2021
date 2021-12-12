@@ -6,6 +6,12 @@ This repository holds my work completed for my presentation for AGU 2021's Fall 
 
 [My AGU 2021 Paper](https://agu.confex.com/agu/fm21/meetingapp.cgi/Paper/955609)
 
+## Notebook/Src
+
+The Notebook ```AGU 2021.ipynb``` contains all of the source and information for my project, including an overview of my work in detail.
+
+My implementation for the Genetic Algorithm can be located in ```genetic_algorithm.py```
+
 ## Main Presentation
 
 For the main presentation materials, please look at 
@@ -15,8 +21,3 @@ For the main presentation materials, please look at
 in ```slides```. 
 
 For a video of the main presentation, please go [here](TOOD:link)
-
-## Notebook
-
-The Notebook ```AGU 2021.ipynb``` contains all of the source and information for my project.
-
