@@ -8,6 +8,8 @@ This repository holds my work completed for my presentation for AGU 2021's Fall 
 
 [Video Narration of my slides](https://vimeo.com/655962793)
 
+[Notebook Online Viewer](https://nbviewer.org/github/willemmirkovich/AGU-2021/blob/main/AGU%202021.ipynb)
+
 ## Notebook/Src
 
 The Notebook ```AGU 2021.ipynb``` contains all of the source and information for my project, including an overview of my work in detail.
